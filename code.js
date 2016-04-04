@@ -52,7 +52,19 @@ function schedule() {
         sequence = targets[index]['Sequence'],
         replied = targets[index]['Replied'],
         sequences;
-      
+    
+    //check reply 
+    if(replied != 'yes') {
+      var isReplied = isRepliedEmail(targets[index]['Email']);
+      if(isReplied) {
+        replied = true;
+        
+        //set reply to true
+        var repliedColIndex = GetObjectKeyIndex(targets[0], 'Replied');
+        targetsSheet.getRange(index + 2, repliedColIndex).setValue('yes');
+      }
+    }
+    
     if(sequence === 'A') {
       sequences = sequencesA;
     } 
@@ -152,4 +164,8 @@ function GetObjectKeyIndex(obj, keyToFind) {
     index++;
   }
   return null;
+};
+
+function isRepliedEmail(email) {
+  return GmailApp.search("from: "+ email).length > 0
 };
