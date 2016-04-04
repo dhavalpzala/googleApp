@@ -1,5 +1,5 @@
 var App = {
-  SPREADSHEET_ID: '1awUjgNSOrudnuyXpxI1ZjY05ousoPTT5R9_nuW3HwJ4',
+  SPREADSHEET_ID: '1PxnPKMIK2RmcCWLvov1Gz7yuEwqBFx6vqUowd8STy44',
   SHEETS: {
     TARGETS: 'Targets',
     SEQUENCE_A: 'SequenceA',
@@ -50,6 +50,7 @@ function schedule() {
         sequenceCount = targets[index]['Sequence Count'],
         active = targets[index]['Active'],
         sequence = targets[index]['Sequence'],
+        replied = targets[index]['Replied'],
         sequences;
       
     if(sequence === 'A') {
@@ -96,7 +97,7 @@ function schedule() {
       sequenceCount = 0;
     }
     
-    if(checkForSendingMail(sendDateTime, active)) {     
+    if(checkForSendingMail(sendDateTime, active, replied)) {     
       //to send mail
       sendMail({
         civility: targets[index]['Civility'],
@@ -114,13 +115,13 @@ function schedule() {
   }
 };
 
-function checkForSendingMail(sendDateTime, active) {
+function checkForSendingMail(sendDateTime, active, replied) {
   if(sendDateTime) {
     var currentTime = Date.now(),
         sendTime = new Date(sendDateTime).getTime(),
         expectedDiff = 3600000; // in milli seconds
     
-    return active !== 'no' && currentTime >= sendTime && (currentTime - sendTime) < expectedDiff;
+    return active !== 'no' && replied != 'yes' && currentTime >= sendTime && (currentTime - sendTime) < expectedDiff;
   }
   else {
     return false;
