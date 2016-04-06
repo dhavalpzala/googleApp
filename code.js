@@ -74,35 +74,40 @@ function schedule() {
     
     if(sequenceCount) {
       //find next sequence datetime
-      var delayTime = sequences[sequenceCount]['Delay Time'];
-      
-      var delayTimeArray = delayTime.split(" "),
-          delayDays = 0,
-          delayHours = 0,
-          delayMinutes = 0;
-      
-      delayTimeArray.forEach(function(time) {
-        if(time.indexOf("d") > 0) {
-          delayDays = parseInt(time);
+      if(sequenceCount < sequences.length) {
+        var delayTime = sequences[sequenceCount]['Delay Time'];
+        
+        var delayTimeArray = delayTime.split(" "),
+            delayDays = 0,
+            delayHours = 0,
+            delayMinutes = 0;
+        
+        delayTimeArray.forEach(function(time) {
+          if(time.indexOf("d") > 0) {
+            delayDays = parseInt(time);
+          }
+          else if(time.indexOf("h") > 0) {
+            delayHours = parseInt(time);
+          }
+          else if(time.indexOf("m") > 0) {
+            delayMinutes = parseInt(time);
+          }
+        });
+        
+        if(delayDays) {
+          sendDateTime.setDate(sendDateTime.getDate() + delayDays);
         }
-        else if(time.indexOf("h") > 0) {
-          delayHours = parseInt(time);
+        
+        if(delayHours) {
+          sendDateTime.setHours(sendDateTime.getHours() + delayHours);
         }
-        else if(time.indexOf("m") > 0) {
-          delayMinutes = parseInt(time);
+        
+        if(delayMinutes) {
+          sendDateTime.setMinutes(sendDateTime.getMinutes() + delayMinutes);
         }
-      });
-      
-      if(delayDays) {
-        sendDateTime.setDate(sendDateTime.getDate() + delayDays);
-      }
-      
-      if(delayHours) {
-        sendDateTime.setHours(sendDateTime.getHours() + delayHours);
-      }
-      
-      if(delayMinutes) {
-        sendDateTime.setMinutes(sendDateTime.getMinutes() + delayMinutes);
+      } 
+      else {
+        sendDateTime = null;
       }
     } 
     else {
@@ -142,7 +147,10 @@ function checkForSendingMail(sendDateTime, active, replied) {
 
 function sendMail(mail, alias, name) {
   var recipient = mail.email,
-      subject = mail.subject,
+      subject = mail.subject.replace("{!Civility}", mail.civility)
+                         .replace("{!FirstName}", mail.firstName)
+                         .replace("{!LastName}", mail.lastName)
+                         .replace("{!Company}", mail.company),
       body = mail.message.replace("{!Civility}", mail.civility)
                          .replace("{!FirstName}", mail.firstName)
                          .replace("{!LastName}", mail.lastName)
