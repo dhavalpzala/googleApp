@@ -113,7 +113,7 @@ function checkAndSendEmail1() {
       var mailBody = String(templateSheet.getRange("D3").getValue()).replace("{civilite}",civilite).replace("{nom_de_famille}", nom_de_famille)
       .replace("{ConfigSheet/nom_client}", nom_client).replace("{email}", email).replace("{ConfigSheet/spreadsheet_link_client}", spreadsheet_link_client);
       
-      GmailApp.sendEmail(recipient1+","+recipient2+","+recipient3, mailSub, mailBody, {name: fromName});
+      GmailApp.sendEmail(recipient1+","+recipient2+","+recipient3, mailSub, mailBody, {name: fromName, cc: cc, bcc: bcc});
       sheet.getRange(i, headersJSON['status']).setValue(2);
       sheet.getRange(i, headersJSON['Action']).setValue("Tarifs");
     }
