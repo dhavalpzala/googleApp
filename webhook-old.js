@@ -2,13 +2,26 @@ var SHEET_NAME = "Personnes intéressées";
 var TEMPLATE_SHEET_NAME= "Email Templates";
 var CONFIG_SHEET_NAME="Config";
 var TIME_RANGE_MINUTES=15;
-var SPREADSHEET_ID="1-wZOfNuKbSXtpw1zYJW9BBonhm8vDrcgomfJA6axVPk";
+var SPREADSHEET_ID="1Iy6ipllGfW71k__tCZpbG1U1cZc9oYgx7cDlQDXCjRw";
 var MAX_ROW_TO_SCAN_FROM_END=50;
+
+function getHeadersJSON(sheetObj) {  
+  var columnsCount = sheetObj.getLastColumn(), 
+      headersRange = sheetObj.getRange(1,1,1,columnsCount).getValues(),
+      headersJSON = {};
+  
+  for (var headerIndex = 0; headerIndex < headersRange[0].length; headerIndex++) {
+    headersJSON[headersRange[0][headerIndex]] = headerIndex + 1;
+  }
+  
+  return headersJSON;
+};
 
 function doPost(e) {
   var spreadsheet=SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = spreadsheet.getSheetByName(SHEET_NAME);
-  
+  var headersJSON = getHeadersJSON(sheet);
+   
   var dataJson=JSON.parse(e["parameters"]["data.json"]);
   var date= getDateYyyyMmDd();
   var time= getTimeHhMmSs();
@@ -22,19 +35,21 @@ function doPost(e) {
   var stage = 1;
   var lastRowNum=sheet.getLastRow()+1;
   
-  sheet.getRange("A"+lastRowNum).setValue(date);
-  sheet.getRange("B"+lastRowNum).setValue(time);
-  sheet.getRange("C"+lastRowNum).setValue(civilite);
-  sheet.getRange("E"+lastRowNum).setValue(lastName);
-  sheet.getRange("F"+lastRowNum).setValue(email);
-  sheet.getRange("O"+lastRowNum).setValue(variant);
-  sheet.getRange("P"+lastRowNum).setValue(page_uuid);
-  sheet.getRange("Q"+lastRowNum).setValue(gclid);
-  sheet.getRange("R"+lastRowNum).setValue(javascript_prepopulated_value);
-  sheet.getRange("U"+lastRowNum).setValue(stage);
-  sheet.getRange("V"+lastRowNum).setValue(new Date().getTime());
-  
+  //Create new row with respective values
+  sheet.getRange(lastRowNum, headersJSON['Date']).setValue(date);
+  sheet.getRange(lastRowNum, headersJSON['Heure']).setValue(time);
+  sheet.getRange(lastRowNum, headersJSON['Civilité']).setValue(civilite);
+  sheet.getRange(lastRowNum, headersJSON['Nom de Famille(Last Name)']).setValue(lastName);
+  sheet.getRange(lastRowNum, headersJSON['Email']).setValue(email);
+  //sheet.getRange(lastRowNum, headersJSON['Téléphone']).setValue(phoneNo);
+  sheet.getRange(lastRowNum, headersJSON['variant(from unbounce)']).setValue(variant);
+  sheet.getRange(lastRowNum, headersJSON['page_uuid(from unbounce)']).setValue(page_uuid);
+  sheet.getRange(lastRowNum, headersJSON['gclid(from unbounce)']).setValue(gclid);
+  sheet.getRange(lastRowNum, headersJSON['javascript_prepopulated_value(from unbounce=timestamp)']).setValue(javascript_prepopulated_value);
+  sheet.getRange(lastRowNum, headersJSON['status']).setValue(stage);
+  sheet.getRange(lastRowNum, headersJSON['Timestamp 1']).setValue(new Date().getTime());
 }
+
 function getDateYyyyMmDd() {
   var today = new Date();
   var dd = today.getDate();
@@ -64,6 +79,7 @@ function getTimeHhMmSs() {
 function checkAndSendEmail1() {
   var spreadsheet=SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = spreadsheet.getSheetByName(SHEET_NAME);
+  var headersJSON = getHeadersJSON(sheet);
   var configSheet = spreadsheet.getSheetByName(CONFIG_SHEET_NAME);
   var templateSheet = spreadsheet.getSheetByName(TEMPLATE_SHEET_NAME);
   var spreadsheet_link_client = configSheet.getRange("B6").getValue();
@@ -71,6 +87,9 @@ function checkAndSendEmail1() {
   var recipient1=configSheet.getRange("B3").getValue();
   var recipient2=configSheet.getRange("B4").getValue();
   var recipient3=configSheet.getRange("B5").getValue();
+  var cc=configSheet.getRange("B10").getValue();
+  var bcc=configSheet.getRange("B11").getValue();
+  
   
   var fromName=configSheet.getRange("B9").getValue();
   
@@ -78,14 +97,14 @@ function checkAndSendEmail1() {
   var rowsScanned=0;
   // loop thru each row
   for(var i = startRowNum; i >= 2; i--) {
-    var status = sheet.getRange("U"+i).getValue();
+    var status = sheet.getRange(i, headersJSON['status']).getValue();
     var rowNum=i;
     
     if(status == 1 || status == 1.0) {
-      var timestamp = parseInt(String(sheet.getRange("V"+i).getValue()), 10);
-      var civilite = sheet.getRange("C"+rowNum).getValue();
-      var nom_de_famille = sheet.getRange("E"+rowNum).getValue();
-      var email = sheet.getRange("F"+rowNum).getValue();
+      var timestamp = parseInt(String(sheet.getRange(i, headersJSON['Timestamp 1']).getValue()), 10);
+      var civilite = sheet.getRange(rowNum, headersJSON['Civilité']).getValue();
+      var nom_de_famille = sheet.getRange(rowNum, headersJSON['Nom de Famille(Last Name)']).getValue();
+      var email = sheet.getRange(rowNum, headersJSON['Email']).getValue();
       
       
       var mailSub = String(templateSheet.getRange("C3").getValue()).replace("{civilite}",civilite).replace("{nom_de_famille}", nom_de_famille)
@@ -94,9 +113,9 @@ function checkAndSendEmail1() {
       var mailBody = String(templateSheet.getRange("D3").getValue()).replace("{civilite}",civilite).replace("{nom_de_famille}", nom_de_famille)
       .replace("{ConfigSheet/nom_client}", nom_client).replace("{email}", email).replace("{ConfigSheet/spreadsheet_link_client}", spreadsheet_link_client);
       
-      GmailApp.sendEmail(recipient1+","+recipient2+","+recipient3, mailSub, mailBody, {name: fromName});
-      sheet.getRange("U"+i).setValue(2);
-      sheet.getRange("J"+i).setValue("Tarifs");
+      GmailApp.sendEmail(recipient1+","+recipient2+","+recipient3, mailSub, mailBody, {name: fromName, cc: cc, bcc: bcc});
+      sheet.getRange(i, headersJSON['status']).setValue(2);
+      sheet.getRange(i, headersJSON['Action']).setValue("Tarifs");
     }
     rowsScanned++;
     if(rowsScanned==MAX_ROW_TO_SCAN_FROM_END) {
