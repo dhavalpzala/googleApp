@@ -121,7 +121,9 @@ function sendMail(JSONData) {
       recipient1=configSheet.getRange("B3").getValue(),
       recipient2=configSheet.getRange("B4").getValue(),
       recipient3=configSheet.getRange("B5").getValue(),
-      fromName=configSheet.getRange("B9").getValue();
+      fromName=configSheet.getRange("B9").getValue(),
+      cc=configSheet.getRange("B10").getValue(),
+      bcc=configSheet.getRange("B11").getValue();
   
   //Mail setup
   var recepients = template[1]['Recepients'].replace(/{ConfigSheet\/email_client1}/g, recipient1)
@@ -139,6 +141,8 @@ function sendMail(JSONData) {
                                       .replace(/{ConfigSheet\/spreadsheet_link_client}/g, spreadsheetLinkClient);
   
   GmailApp.sendEmail(recepients, subject, message, {
-    name: fromName
+    name: fromName,
+    cc: cc,
+    bcc: bcc
   });
 };
